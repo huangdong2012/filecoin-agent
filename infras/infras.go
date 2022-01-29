@@ -1,6 +1,9 @@
 package infras
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"github.com/shirou/gopsutil/host"
+)
 
 func Throw(err error) {
 	if err != nil {
@@ -11,4 +14,12 @@ func Throw(err error) {
 func ToJson(val interface{}) string {
 	data, _ := json.MarshalIndent(val, "", "   ")
 	return string(data)
+}
+
+func HostNo() string {
+	info, err := host.Info()
+	if err != nil {
+		return ""
+	}
+	return info.HostID
 }
