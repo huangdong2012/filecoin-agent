@@ -31,14 +31,19 @@ func DownloadToDir(url, user, pwd, dir string) (string, error) {
 	if resp.StatusCode != 200 {
 		return "", fmt.Errorf("Error Status of HTTP: %v", resp.StatusCode)
 	}
-	if err = CopyToFile(target, resp.Body); err != nil {
+	if err = copyToFile(target, resp.Body); err != nil {
 		return "", err
 	}
 
 	return target, nil
 }
 
-func CopyToFile(target string, body io.Reader) error {
+func copyToFile(target string, body io.Reader) error {
+	if dir := filepath.Dir(target); !PathExist(dir) {
+		if err := os.MkdirAll(dir, 0755); err != nil {
+			return err
+		}
+	}
 	file, err := os.OpenFile(target, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0600)
 	if err != nil {
 		return err

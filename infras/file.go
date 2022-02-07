@@ -29,3 +29,13 @@ func Decompress(target, dir string) error {
 	}
 	return archiver.Unarchive(target, dir)
 }
+
+func PathExist(path string) bool {
+	if _, err := os.Stat(path); err != nil {
+		if os.IsExist(err) {
+			return true
+		}
+		return false
+	}
+	return true
+}
