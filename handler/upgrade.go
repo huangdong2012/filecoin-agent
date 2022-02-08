@@ -7,6 +7,7 @@ import (
 	"grandhelmsman/filecoin-agent/infras"
 	"grandhelmsman/filecoin-agent/model"
 	"grandhelmsman/filecoin-agent/supd"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -52,14 +53,14 @@ func (h *upgradeHandler) Handle(msg *model.CommandRequest) (resp *model.CommandR
 
 	//4.parse package.json
 	pkg := &model.Package{}
-	//pkgName := "package.json"
-	//if pkgPath := filepath.Join(dest, pkgName); infras.PathExist(pkgPath) {
-	//	if data, err := ioutil.ReadFile(pkgPath); err == nil {
-	//		if err = json.Unmarshal(data, pkg); err != nil {
-	//			return nil, err
-	//		}
-	//	}
-	//}
+	pkgName := "package.json"
+	if pkgPath := filepath.Join(dest, pkgName); infras.PathExist(pkgPath) {
+		if data, err := ioutil.ReadFile(pkgPath); err == nil {
+			if err = json.Unmarshal(data, pkg); err != nil {
+				return nil, err
+			}
+		}
+	}
 
 	//5.1.stop and start services
 	if err = h.operateServices("stop", cmd.Services); err != nil {
@@ -112,7 +113,7 @@ func (h *upgradeHandler) copyFiles(base, dest string, pkg *model.Package) (err e
 					fmt.Println("rollback mv bak error:", err2)
 				}
 			}
-		} else { //remove .bak
+		} else { //remove bak
 			for _, bak := range baks {
 				if _, err2 := infras.ExecCommand("rm", "-rf", bak); err2 != nil {
 					fmt.Println("clear bak error:", err2)
@@ -132,13 +133,18 @@ func (h *upgradeHandler) copyFiles(base, dest string, pkg *model.Package) (err e
 			} else {
 				baks = append(baks, bak)
 			}
+
+			if pkg.Full { //全量更新
+				if _, err = infras.ExecCommand("rm", "-rf", to); err != nil {
+					return err
+				}
+			}
 		}
 
 		//2.copy
 		if _, err = infras.ExecCommand("cp", "-rf", from, base); err != nil {
 			return err
 		}
-		return errors.New("test")
 	}
 
 	return nil
