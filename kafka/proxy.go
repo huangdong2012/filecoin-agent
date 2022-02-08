@@ -18,6 +18,11 @@ func newProxy() *kafkaProxy {
 	}
 }
 
+type OffsetOption struct {
+	GetOffset func(partition int32) int64
+	SetOffset func(partition int32, offset int64)
+}
+
 type kafkaConsumer struct {
 	consumer sarama.Consumer
 	messageC chan *model.CommandRequest
@@ -59,7 +64,7 @@ func (k *kafkaProxy) getProducer(topic string) (sarama.SyncProducer, error) {
 	return producer, nil
 }
 
-func (k *kafkaProxy) getConsumer(id, topic string, stopC <-chan bool) (<-chan *model.CommandRequest, error) {
+func (k *kafkaProxy) getConsumer(id, topic string, stopC <-chan bool, opt *OffsetOption) (<-chan *model.CommandRequest, error) {
 	key := fmt.Sprintf("%v@%v", id, topic)
 	k.consumersRW.RLock()
 	consumer, ok := k.consumers[key]
@@ -88,30 +93,36 @@ func (k *kafkaProxy) getConsumer(id, topic string, stopC <-chan bool) (<-chan *m
 		consumer: csm,
 		messageC: make(chan *model.CommandRequest),
 	}
-	if err = k.initConsumer(consumer, topic, pts, stopC); err != nil {
+	if err = k.initConsumer(consumer, topic, pts, stopC, opt); err != nil {
 		return nil, err
 	}
 	k.consumers[key] = consumer
 	return consumer.messageC, nil
 }
 
-func (k *kafkaProxy) initConsumer(kc *kafkaConsumer, topic string, pts []int32, stopC <-chan bool) error {
+func (k *kafkaProxy) initConsumer(kc *kafkaConsumer, topic string, pts []int32, stopC <-chan bool, opt *OffsetOption) error {
 	pcs := make([]sarama.PartitionConsumer, 0, 0)
 	for _, pt := range pts {
-		pc, err := kc.consumer.ConsumePartition(topic, pt, sarama.OffsetOldest)
+		offset := sarama.OffsetNewest
+		if opt != nil && opt.GetOffset != nil {
+			if tmp := opt.GetOffset(pt); tmp >= 0 {
+				offset = tmp + 1
+			}
+		}
+		pc, err := kc.consumer.ConsumePartition(topic, pt, offset)
 		if err != nil {
 			return err
 		}
 		pcs = append(pcs, pc)
 	}
 	for _, pc := range pcs {
-		go k.handleConsumer(kc, pc, stopC)
+		go k.handleConsumer(kc, pc, stopC, opt)
 	}
 
 	return nil
 }
 
-func (k *kafkaProxy) handleConsumer(kc *kafkaConsumer, pc sarama.PartitionConsumer, stopC <-chan bool) {
+func (k *kafkaProxy) handleConsumer(kc *kafkaConsumer, pc sarama.PartitionConsumer, stopC <-chan bool, opt *OffsetOption) {
 	for {
 		select {
 		case <-stopC:
@@ -120,6 +131,9 @@ func (k *kafkaProxy) handleConsumer(kc *kafkaConsumer, pc sarama.PartitionConsum
 			cmd := &model.CommandRequest{}
 			if err := json.Unmarshal(msg.Value, cmd); err == nil {
 				kc.messageC <- cmd
+				if opt != nil && opt.SetOffset != nil {
+					opt.SetOffset(msg.Partition, msg.Offset)
+				}
 			}
 		}
 	}

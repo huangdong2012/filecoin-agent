@@ -12,22 +12,38 @@ import (
 var (
 	id    = infras.HostNo()
 	exitC = make(chan bool)
+	opt   = &Option{}
 )
 
-func Init(brokers []string, topicRq, topicRs string, supConf string, verbose bool) {
+func Init(opts ...Options) {
+	for _, fn := range opts {
+		fn(opt)
+	}
+
+	//setup
+	if !infras.PathExist(opt.ProjectRoot) {
+		if opt.ProjectRoot = defaultProjectRoot(); len(opt.ProjectRoot) == 0 {
+			panic("project-root invalid")
+		}
+	}
+
 	//init kafka
-	kafka.Init(brokers, verbose)
-	if msgC, err := kafka.Consume(id, topicRq, exitC); err != nil {
+	Offset.init()
+	kafka.Init(opt.Brokers, opt.Verbose)
+	if msgC, err := kafka.Consume(id, opt.TopicRq, exitC, &kafka.OffsetOption{
+		GetOffset: Offset.get,
+		SetOffset: Offset.set,
+	}); err != nil {
 		panic(err)
 	} else {
-		go loop(topicRs, msgC)
+		go loop(msgC)
 	}
 
 	//init supd
-	if len(supConf) > 0 {
-		supd.Init(func(opt *supd.Option) {
-			opt.ConfigPath = supConf
-			opt.Verbose = verbose
+	if len(opt.SupConfig) > 0 {
+		supd.Init(func(o *supd.Option) {
+			o.ConfigPath = opt.SupConfig
+			o.Verbose = opt.Verbose
 		})
 	}
 }
@@ -40,27 +56,52 @@ func Exit() {
 	}
 }
 
-func loop(topicRs string, msgC <-chan *model.CommandRequest) {
+func loop(msgC <-chan *model.CommandRequest) {
 	for msg := range msgC {
 		var (
 			err  error
 			resp *model.CommandResponse
 		)
+		if !infras.StringSliceContains(msg.Hosts, id) {
+			continue
+		}
+		if msg.ExpireTime > 0 && time.Now().After(time.Unix(msg.ExpireTime, 0)) {
+			continue
+		}
+
 		switch model.CommandKind(msg.Kind) {
 		case model.CommandKind_Upgrade:
 			resp, err = Upgrade.Handle(msg)
 		}
+
 		if err != nil {
-			resp = &model.CommandResponse{
-				ID:         msg.ID,
-				Host:       infras.HostNo(),
-				Status:     int(model.CommandStatus_Error),
-				Message:    err.Error(),
-				FinishTime: time.Now().Unix(),
-			}
+			err = publishResp(msg.ID, model.CommandStatus_Error, err.Error())
+		} else {
+			err = publishResp(msg.ID, model.CommandStatus(resp.Status), resp.Message)
 		}
-		if _, _, err = kafka.PublishCmdResp(topicRs, resp); err != nil {
+		if err != nil {
 			fmt.Println("publish command response error:", err)
 		}
 	}
+}
+
+func publishResp(mid string, status model.CommandStatus, msg string) error {
+	_, _, err := kafka.PublishCmdResp(opt.TopicRs, &model.CommandResponse{
+		ID:         mid,
+		Host:       id,
+		Status:     int(status),
+		Message:    msg,
+		FinishTime: time.Now().Unix(),
+	})
+	return err
+}
+
+func defaultProjectRoot() string {
+	if root := "/root/hlm-miner"; infras.PathExist(root) {
+		return root
+	}
+	if root := "/hlm-miner"; infras.PathExist(root) {
+		return root
+	}
+	return ""
 }

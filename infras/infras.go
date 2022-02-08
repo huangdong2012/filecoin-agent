@@ -28,3 +28,12 @@ func HostNo() string {
 func TimeFormat(t time.Time) string {
 	return t.Format("2006-01-02 15:04:05")
 }
+
+func StringSliceContains(items []string, item string) bool {
+	for _, str := range items {
+		if str == item {
+			return true
+		}
+	}
+	return false
+}

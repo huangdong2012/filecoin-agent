@@ -26,9 +26,9 @@ func TestPublish(t *testing.T) {
 		Kind:  int(model.CommandKind_Upgrade),
 		Hosts: []string{infras.HostNo()},
 		Body: infras.ToJson(&model.UpgradeCommand{
-			SourceUrl:  "http://localhost:81/download/lotus.tar.gz",
-			TargetPath: "/Users/huangdong/Temp/hlm-miner",
-			Services:   []string{"test"},
+			SourceUrl: "http://localhost:81/download/lotus.tar.gz",
+			Sha256:    "7be1a2f00576ad6ef8e59c874849b3e8685d71949e8d546e5854fb730de57e24",
+			Services:  []string{"test"},
 		}),
 		CreateTime: time.Now().Unix(),
 	}))
@@ -41,19 +41,19 @@ func TestConsume(t *testing.T) {
 	c := make(chan bool)
 	topic := "goto.test"
 
-	msg1, err := Consume("1", topic, c)
+	msg1, err := Consume("1", topic, c, nil)
 	if err != nil {
 		panic(err)
 	}
 	go consumeHandle("1", msg1)
 
-	msg2, err := Consume("2", topic, c)
+	msg2, err := Consume("2", topic, c, nil)
 	if err != nil {
 		panic(err)
 	}
 	go consumeHandle("2", msg2)
 
-	msg3, err := Consume("3", topic, c)
+	msg3, err := Consume("3", topic, c, nil)
 	if err != nil {
 		panic(err)
 	}

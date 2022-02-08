@@ -14,8 +14,6 @@ type CommandRequest struct {
 
 type CommandResponse struct {
 	ID         string `json:"id"`
-	MinerID    string `json:"miner_id"`
-	Worker     string `json:"worker"`
 	Host       string `json:"host"`
 	Status     int    `json:"status"` //enum: CommandStatus
 	Message    string `json:"message"`

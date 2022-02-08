@@ -37,6 +37,6 @@ func Publish(topic string, value string) (int32, int64, error) {
 	})
 }
 
-func Consume(id, topic string, stopC <-chan bool) (<-chan *model.CommandRequest, error) {
-	return kafka.getConsumer(id, topic, stopC)
+func Consume(id, topic string, stopC <-chan bool, opt *OffsetOption) (<-chan *model.CommandRequest, error) {
+	return kafka.getConsumer(id, topic, stopC, opt)
 }

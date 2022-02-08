@@ -28,22 +28,27 @@ func (h *upgradeHandler) Handle(msg *model.CommandRequest) (resp *model.CommandR
 	}
 
 	//1.setup
-	base := "/root/hlm-miner"
-	if len(cmd.TargetPath) > 0 {
-		base = cmd.TargetPath
-	}
-	dir := filepath.Join(base, "upgrade")
+	dir := filepath.Join(opt.ProjectRoot, "upgrade")
 	src := filepath.Join(dir, "src")
 	dest := filepath.Join(dir, "dest")
 	if err = os.RemoveAll(dest); err != nil {
 		return nil, err
 	}
 
-	//2.download zip and decompress
+	//2.1 download zip
 	if zip, err := infras.DownloadToDir(cmd.SourceUrl, cmd.Username, cmd.Password, src); err != nil {
 		return nil, err
-	} else if err = infras.Decompress(zip, dest); err != nil {
-		return nil, err
+	} else {
+		//2.2 checksum
+		if hash, err := infras.CheckSum(zip); err != nil {
+			return nil, err
+		} else if hash != cmd.Sha256 {
+			return nil, errors.New("checksum invalid")
+		}
+		//2.3 decompress
+		if err = infras.Decompress(zip, dest); err != nil {
+			return nil, err
+		}
 	}
 
 	//3.get dest dir name
@@ -63,18 +68,18 @@ func (h *upgradeHandler) Handle(msg *model.CommandRequest) (resp *model.CommandR
 	}
 
 	//5.1.stop and start services
-	if err = h.operateServices("stop", cmd.Services); err != nil {
+	if err = h.operateServices(msg.ID, "stop", cmd.Services); err != nil {
 		return nil, err
 	}
 	defer func() {
 		//5.2.start services
 		if err == nil {
-			err = h.operateServices("start", cmd.Services)
+			err = h.operateServices(msg.ID, "start", cmd.Services)
 		}
 	}()
 
 	//6.copy files
-	if err = h.copyFiles(base, dest, pkg); err != nil {
+	if err = h.copyFiles(opt.ProjectRoot, dest, pkg); err != nil {
 		return nil, err
 	}
 
@@ -150,10 +155,24 @@ func (h *upgradeHandler) copyFiles(base, dest string, pkg *model.Package) (err e
 	return nil
 }
 
-func (h *upgradeHandler) operateServices(operate string, services []string) error {
+func (h *upgradeHandler) operateServices(msgID, operate string, services []string) error {
+	var (
+		err  error
+		flag = operate == "stop" //(stopping ~ stopped) report to kafka for progress
+	)
 	for _, srv := range services {
+		if flag { //stopping
+			if err = publishResp(msgID, model.CommandStatus_Running, fmt.Sprintf("stopping service: %v", srv)); err != nil {
+				fmt.Println("publish stopping progress error:", err)
+			}
+		}
 		if err := supd.Execute([]string{operate, srv}); err != nil {
 			return err
+		}
+		if flag { //stopped
+			if err = publishResp(msgID, model.CommandStatus_Running, fmt.Sprintf("stopped service: %v", srv)); err != nil {
+				fmt.Println("publish stopping progress error:", err)
+			}
 		}
 	}
 	return nil
