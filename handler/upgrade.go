@@ -7,9 +7,9 @@ import (
 	"grandhelmsman/filecoin-agent/infras"
 	"grandhelmsman/filecoin-agent/model"
 	"grandhelmsman/filecoin-agent/supd"
-	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 )
 
@@ -52,14 +52,14 @@ func (h *upgradeHandler) Handle(msg *model.CommandRequest) (resp *model.CommandR
 
 	//4.parse package.json
 	pkg := &model.Package{}
-	pkgName := "package.json"
-	if pkgPath := filepath.Join(dest, pkgName); infras.PathExist(pkgPath) {
-		if data, err := ioutil.ReadFile(pkgPath); err == nil {
-			if err = json.Unmarshal(data, pkg); err != nil {
-				return nil, err
-			}
-		}
-	}
+	//pkgName := "package.json"
+	//if pkgPath := filepath.Join(dest, pkgName); infras.PathExist(pkgPath) {
+	//	if data, err := ioutil.ReadFile(pkgPath); err == nil {
+	//		if err = json.Unmarshal(data, pkg); err != nil {
+	//			return nil, err
+	//		}
+	//	}
+	//}
 
 	//5.1.stop and start services
 	if err = h.operateServices("stop", cmd.Services); err != nil {
@@ -67,7 +67,9 @@ func (h *upgradeHandler) Handle(msg *model.CommandRequest) (resp *model.CommandR
 	}
 	defer func() {
 		//5.2.start services
-		err = h.operateServices("start", cmd.Services)
+		if err == nil {
+			err = h.operateServices("start", cmd.Services)
+		}
 	}()
 
 	//6.copy files
@@ -83,11 +85,11 @@ func (h *upgradeHandler) Handle(msg *model.CommandRequest) (resp *model.CommandR
 	}, nil
 }
 
-func (h *upgradeHandler) copyFiles(base, dest string, pkg *model.Package) error {
+func (h *upgradeHandler) copyFiles(base, dest string, pkg *model.Package) (err error) {
 	var (
-		err   error
 		file  *os.File
 		infos []os.FileInfo
+		baks  []string
 	)
 	if file, err = os.Open(dest); err != nil {
 		return err
@@ -98,31 +100,45 @@ func (h *upgradeHandler) copyFiles(base, dest string, pkg *model.Package) error 
 		return err
 	}
 	defer func() {
-		if err == nil {
-			_, err = infras.ExecCommand("rm", "-rf", filepath.Join(base, "*.bak"))
+		if err != nil { //rollback
+			for _, bak := range baks {
+				src := strings.TrimSuffix(bak, ".bak")
+				if infras.PathExist(src) {
+					if _, err2 := infras.ExecCommand("rm", "-rf", src); err2 != nil {
+						fmt.Println("rollback rm src error:", err2)
+					}
+				}
+				if _, err2 := infras.ExecCommand("mv", "-f", bak, src); err2 != nil {
+					fmt.Println("rollback mv bak error:", err2)
+				}
+			}
+		} else { //remove .bak
+			for _, bak := range baks {
+				if _, err2 := infras.ExecCommand("rm", "-rf", bak); err2 != nil {
+					fmt.Println("clear bak error:", err2)
+				}
+			}
 		}
 	}()
 
 	for _, info := range infos {
 		from := filepath.Join(dest, info.Name())
 		to := filepath.Join(base, info.Name())
-		//1.backup and remove
+		//1.backup
 		if infras.PathExist(to) {
-			if _, err = infras.ExecCommand("cp", "-rf", to, to+".bak"); err != nil {
+			bak := to + ".bak"
+			if _, err = infras.ExecCommand("cp", "-rf", to, bak); err != nil {
 				return err
-			}
-			if err = os.RemoveAll(to); err != nil {
-				return err
+			} else {
+				baks = append(baks, bak)
 			}
 		}
 
-		//2.copy or rollback
-		if _, err = infras.ExecCommand("cp", "-rf", from, to); err != nil {
-			if _, err2 := infras.ExecCommand("mv", to+".bak", to); err2 != nil {
-				return fmt.Errorf("mutil errors: %v\n%v", err, err2)
-			}
+		//2.copy
+		if _, err = infras.ExecCommand("cp", "-rf", from, base); err != nil {
 			return err
 		}
+		return errors.New("test")
 	}
 
 	return nil
@@ -154,5 +170,5 @@ func (h *upgradeHandler) getDestDirName(dest string) (string, error) {
 		return "", errors.New("dir count invalid of dest")
 	}
 
-	return infos[0].Name(), nil
+	return filepath.Join(dest, infos[0].Name()), nil
 }

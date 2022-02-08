@@ -2,6 +2,7 @@ package kafka
 
 import (
 	"fmt"
+	"github.com/google/uuid"
 	"grandhelmsman/filecoin-agent/infras"
 	"grandhelmsman/filecoin-agent/model"
 	"testing"
@@ -19,13 +20,19 @@ func setup() {
 func TestPublish(t *testing.T) {
 	setup()
 
-	topic := "goto.test"
-	for i := 0; i < 5; i++ {
-		p, o, err := Publish(topic, infras.ToJson(&model.CommandRequest{
-			ID: fmt.Sprintf("happy new year: %v", i),
-		}))
-		fmt.Println(p, o, err)
-	}
+	topic := "zdz.command.request"
+	p, o, err := Publish(topic, infras.ToJson(&model.CommandRequest{
+		ID:    uuid.New().String(),
+		Kind:  int(model.CommandKind_Upgrade),
+		Hosts: []string{infras.HostNo()},
+		Body: infras.ToJson(&model.UpgradeCommand{
+			SourceUrl:  "http://localhost:81/download/lotus.tar.gz",
+			TargetPath: "/Users/huangdong/Temp/hlm-miner",
+			Services:   []string{"test"},
+		}),
+		CreateTime: time.Now().Unix(),
+	}))
+	fmt.Println(p, o, err)
 }
 
 func TestConsume(t *testing.T) {
