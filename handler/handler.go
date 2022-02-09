@@ -76,6 +76,8 @@ func loop(msgC <-chan *model.CommandRequest) {
 		switch model.CommandKind(msg.Kind) {
 		case model.CommandKind_Upgrade:
 			resp, err = Upgrade.Handle(msg)
+		case model.CommandKind_Dispatch:
+			resp, err = Dispatch.Handle(msg)
 		}
 
 		if err != nil {
