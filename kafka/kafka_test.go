@@ -67,7 +67,7 @@ func TestConsume(t *testing.T) {
 	}
 	go consumeHandle("3", msg3)
 
-	<-time.After(time.Second * 15)
+	<-time.After(time.Second * 60)
 	close(c)
 }
 

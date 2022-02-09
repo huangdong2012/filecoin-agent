@@ -29,9 +29,9 @@ func Init(opts ...Options) {
 		sarama.Logger = log.New(os.Stdout, "[sarama] ", log.LstdFlags)
 	}
 	if opt.Rest {
-		kafka = Rest
+		kafka = newRestProxy(opt.Brokers[0])
 	} else {
-		kafka = Normal
+		kafka = newNormalProxy()
 	}
 }
 

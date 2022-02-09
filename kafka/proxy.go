@@ -8,15 +8,15 @@ import (
 	"sync"
 )
 
-var (
-	Normal = &normalProxy{
+func newNormalProxy() *normalProxy {
+	return &normalProxy{
 		producersRW: &sync.RWMutex{},
 		producers:   make(map[string]sarama.SyncProducer),
 
 		consumersRW: &sync.RWMutex{},
 		consumers:   make(map[string]*syncConsumer),
 	}
-)
+}
 
 type syncConsumer struct {
 	consumer sarama.Consumer
@@ -43,16 +43,16 @@ func (p *normalProxy) Publish(topic string, value string) (int32, int64, error) 
 	})
 }
 
-func (k *normalProxy) getProducer(topic string) (sarama.SyncProducer, error) {
-	k.producersRW.RLock()
-	producer, ok := k.producers[topic]
-	k.producersRW.RUnlock()
+func (p *normalProxy) getProducer(topic string) (sarama.SyncProducer, error) {
+	p.producersRW.RLock()
+	producer, ok := p.producers[topic]
+	p.producersRW.RUnlock()
 	if ok {
 		return producer, nil
 	}
 
-	k.producersRW.Lock()
-	defer k.producersRW.Unlock()
+	p.producersRW.Lock()
+	defer p.producersRW.Unlock()
 
 	var (
 		err    error
@@ -65,21 +65,21 @@ func (k *normalProxy) getProducer(topic string) (sarama.SyncProducer, error) {
 		return nil, err
 	}
 
-	k.producers[topic] = producer
+	p.producers[topic] = producer
 	return producer, nil
 }
 
-func (k *normalProxy) Consume(id, topic string, stopC <-chan bool, offsetOpt *OffsetOption) (<-chan *model.CommandRequest, error) {
+func (p *normalProxy) Consume(id, topic string, stopC <-chan bool, offsetOpt *OffsetOption) (<-chan *model.CommandRequest, error) {
 	key := fmt.Sprintf("%v@%v", id, topic)
-	k.consumersRW.RLock()
-	consumer, ok := k.consumers[key]
-	k.consumersRW.RUnlock()
+	p.consumersRW.RLock()
+	consumer, ok := p.consumers[key]
+	p.consumersRW.RUnlock()
 	if ok {
 		return consumer.messageC, nil
 	}
 
-	k.consumersRW.Lock()
-	defer k.consumersRW.Unlock()
+	p.consumersRW.Lock()
+	defer p.consumersRW.Unlock()
 
 	var (
 		err error
@@ -93,19 +93,18 @@ func (k *normalProxy) Consume(id, topic string, stopC <-chan bool, offsetOpt *Of
 			return nil, err
 		}
 	}
-
 	consumer = &syncConsumer{
 		consumer: csm,
 		messageC: make(chan *model.CommandRequest),
 	}
-	if err = k.initConsumer(consumer, topic, pts, stopC, offsetOpt); err != nil {
+	if err = p.initConsumer(consumer, topic, pts, stopC, offsetOpt); err != nil {
 		return nil, err
 	}
-	k.consumers[key] = consumer
+	p.consumers[key] = consumer
 	return consumer.messageC, nil
 }
 
-func (k *normalProxy) initConsumer(kc *syncConsumer, topic string, pts []int32, stopC <-chan bool, offsetOpt *OffsetOption) error {
+func (p *normalProxy) initConsumer(kc *syncConsumer, topic string, pts []int32, stopC <-chan bool, offsetOpt *OffsetOption) error {
 	pcs := make([]sarama.PartitionConsumer, 0, 0)
 	for _, pt := range pts {
 		offset := sarama.OffsetNewest
@@ -121,13 +120,13 @@ func (k *normalProxy) initConsumer(kc *syncConsumer, topic string, pts []int32, 
 		pcs = append(pcs, pc)
 	}
 	for _, pc := range pcs {
-		go k.handleConsumer(kc, pc, stopC, offsetOpt)
+		go p.handleConsumer(kc, pc, stopC, offsetOpt)
 	}
 
 	return nil
 }
 
-func (k *normalProxy) handleConsumer(kc *syncConsumer, pc sarama.PartitionConsumer, stopC <-chan bool, offsetOpt *OffsetOption) {
+func (p *normalProxy) handleConsumer(kc *syncConsumer, pc sarama.PartitionConsumer, stopC <-chan bool, offsetOpt *OffsetOption) {
 	for {
 		select {
 		case <-stopC:
