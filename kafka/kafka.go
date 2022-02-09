@@ -2,8 +2,8 @@ package kafka
 
 import (
 	"github.com/Shopify/sarama"
-	"grandhelmsman/filecoin-agent/infras"
-	"grandhelmsman/filecoin-agent/model"
+	"huangdong2012/filecoin-agent/infras"
+	"huangdong2012/filecoin-agent/model"
 	"log"
 	"os"
 )
