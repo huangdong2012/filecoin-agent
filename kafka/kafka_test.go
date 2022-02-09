@@ -10,11 +10,15 @@ import (
 )
 
 func setup() {
-	Init([]string{
-		"localhost:9092",
-		"localhost:9082",
-		"localhost:9072",
-	}, false)
+	Init(func(o *Option) {
+		o.Brokers = []string{
+			"localhost:9092",
+			"localhost:9082",
+			"localhost:9072",
+		}
+		o.Verbose = false
+		o.Rest = false
+	})
 }
 
 func TestPublish(t *testing.T) {
@@ -39,7 +43,7 @@ func TestConsume(t *testing.T) {
 	setup()
 
 	c := make(chan bool)
-	topic := "goto.test"
+	topic := "zdz.command.request"
 
 	msg1, err := Consume("1", topic, c, nil)
 	if err != nil {

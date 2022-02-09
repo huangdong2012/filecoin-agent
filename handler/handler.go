@@ -29,7 +29,11 @@ func Init(opts ...Options) {
 
 	//init kafka
 	Offset.init()
-	kafka.Init(opt.Brokers, opt.Verbose)
+	kafka.Init(func(kfkOpt *kafka.Option) {
+		kfkOpt.Brokers = opt.Brokers
+		kfkOpt.Verbose = opt.Verbose
+		kfkOpt.Rest = true
+	})
 	if msgC, err := kafka.Consume(id, opt.TopicRq, exitC, &kafka.OffsetOption{
 		GetOffset: Offset.get,
 		SetOffset: Offset.set,

@@ -37,7 +37,7 @@ func (h *offsetHandler) init() {
 	go h.loop()
 }
 
-func (h *offsetHandler) get(partition int32) int64 {
+func (h *offsetHandler) get(topic string, partition int32) int64 {
 	offset := int64(0)
 	h.offsets.Range(func(k, v interface{}) bool {
 		if k.(int32) == partition {
@@ -49,7 +49,7 @@ func (h *offsetHandler) get(partition int32) int64 {
 	return offset
 }
 
-func (h *offsetHandler) set(partition int32, offset int64) {
+func (h *offsetHandler) set(topic string, partition int32, offset int64) {
 	h.offsets.Store(partition, offset)
 }
 

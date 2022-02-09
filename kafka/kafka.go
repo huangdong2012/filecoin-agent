@@ -9,15 +9,29 @@ import (
 )
 
 var (
-	kafka = newProxy()
+	opt   = &Option{}
+	kafka Proxy
 )
 
-func Init(brokers []string, verbose bool) {
-	if kafka.brokers = brokers; len(brokers) == 0 {
-		panic("brokers invalid")
+type Proxy interface {
+	Publish(topic string, value string) (int32, int64, error)
+	Consume(id, topic string, stopC <-chan bool, offsetOpt *OffsetOption) (<-chan *model.CommandRequest, error)
+}
+
+func Init(opts ...Options) {
+	for _, fn := range opts {
+		fn(opt)
 	}
-	if verbose {
+	if len(opt.Brokers) == 0 {
+		panic("kafka brokers invalid")
+	}
+	if opt.Verbose {
 		sarama.Logger = log.New(os.Stdout, "[sarama] ", log.LstdFlags)
+	}
+	if opt.Rest {
+		kafka = Rest
+	} else {
+		kafka = Normal
 	}
 }
 
@@ -26,17 +40,9 @@ func PublishCmdResp(topic string, cmdResp *model.CommandResponse) (int32, int64,
 }
 
 func Publish(topic string, value string) (int32, int64, error) {
-	producer, err := kafka.getProducer(topic)
-	if err != nil {
-		return 0, 0, err
-	}
-
-	return producer.SendMessage(&sarama.ProducerMessage{
-		Topic: topic,
-		Value: sarama.StringEncoder(value),
-	})
+	return kafka.Publish(topic, value)
 }
 
-func Consume(id, topic string, stopC <-chan bool, opt *OffsetOption) (<-chan *model.CommandRequest, error) {
-	return kafka.getConsumer(id, topic, stopC, opt)
+func Consume(id, topic string, stopC <-chan bool, offsetOpt *OffsetOption) (<-chan *model.CommandRequest, error) {
+	return kafka.Consume(id, topic, stopC, offsetOpt)
 }
