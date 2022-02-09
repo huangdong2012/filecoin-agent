@@ -11,13 +11,17 @@ import (
 
 func setup() {
 	Init(func(o *Option) {
+		//o.Brokers = []string{
+		//	"localhost:9092",
+		//	"localhost:9082",
+		//	"localhost:9072",
+		//}
+		//o.Rest = false
+
 		o.Brokers = []string{
-			"localhost:9092",
-			"localhost:9082",
-			"localhost:9072",
+			"http://localhost:8082",
 		}
-		o.Verbose = false
-		o.Rest = false
+		o.Rest = true
 	})
 }
 
