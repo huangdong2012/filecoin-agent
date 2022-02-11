@@ -25,7 +25,7 @@ type dispatchHandler struct {
 }
 
 func (h *dispatchHandler) Handle(msg *model.CommandRequest) (resp *model.CommandResponse, err error) {
-	logrus.Infof("recv worker sched msg: %+v ", msg)
+	logrus.Debugf("recv worker sched msg: %+v ", msg)
 	cmd := &model.DispatchCommand{}
 	if err = json.Unmarshal([]byte(msg.Body), cmd); err != nil {
 		return nil, err

@@ -85,13 +85,15 @@ func (p *restProxy) loopConsumer(rc *restConsumer, stopC <-chan bool, offsetOpt 
 					logrus.Error(err)
 					continue
 				}
-				logrus.Infof("recv: %+v", string(msgBytes))
+				logrus.Debugf("recv: %+v", string(msgBytes))
 				if err := json.Unmarshal(msgBytes, cmd); err == nil {
 					rc.messageC <- cmd
 
 					if offsetOpt != nil && offsetOpt.SetOffset != nil {
 						offsetOpt.SetOffset(msg.Topic, msg.Partition, msg.Offset)
 					}
+				} else {
+					logrus.Error(err)
 				}
 			}
 		}
