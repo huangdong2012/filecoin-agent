@@ -7,6 +7,7 @@ type Option struct {
 	Verbose     bool
 
 	Brokers []string //kafka brokers
+	Rest    bool
 	TopicRq string   //command-request topic
 	TopicRs string   //command-response topic
 

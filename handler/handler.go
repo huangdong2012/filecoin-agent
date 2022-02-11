@@ -32,7 +32,7 @@ func Init(opts ...Options) {
 	kafka.Init(func(kfkOpt *kafka.Option) {
 		kfkOpt.Brokers = opt.Brokers
 		kfkOpt.Verbose = opt.Verbose
-		kfkOpt.Rest = true
+		kfkOpt.Rest = opt.Rest
 	})
 	if msgC, err := kafka.Consume(id, opt.TopicRq, exitC, &kafka.OffsetOption{
 		GetOffset: Offset.get,
