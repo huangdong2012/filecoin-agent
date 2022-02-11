@@ -18,7 +18,6 @@ type workerConfigHandler struct {
 }
 
 func (h *workerConfigHandler) Handle(msg *model.CommandRequest) (*model.CommandResponse, error) {
-	logrus.Infof("recv worker msg: %+v ", msg)
 	err := h.handlerWorkerTask(msg)
 	if err != nil {
 		return nil, err
