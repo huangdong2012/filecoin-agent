@@ -25,12 +25,12 @@ type dispatchHandler struct {
 }
 
 func (h *dispatchHandler) Handle(msg *model.CommandRequest) (resp *model.CommandResponse, err error) {
-	logrus.Debugf("recv worker sched msg: %+v ", msg)
 	cmd := &model.DispatchCommand{}
 	if err = json.Unmarshal([]byte(msg.Body), cmd); err != nil {
 		return nil, err
 	}
 	// token 加解密
+	logrus.Debugf("recv worker sched msg: %+v ", cmd)
 	repoPath := cmd.Repo
 	if repoPath == "" {
 		repoPath = opt.LotusMinerConfig.RepoPath

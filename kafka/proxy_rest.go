@@ -85,7 +85,6 @@ func (p *restProxy) loopConsumer(rc *restConsumer, stopC <-chan bool, offsetOpt 
 					logrus.Error(err)
 					continue
 				}
-				logrus.Debugf("recv: %+v", string(msgBytes))
 				if err := json.Unmarshal(msgBytes, cmd); err == nil {
 					rc.messageC <- cmd
 
