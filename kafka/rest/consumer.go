@@ -32,11 +32,11 @@ type Consumer struct {
 }
 
 type Message struct {
-	Topic     string `json:"topic"`
-	Key       string `json:"key"`
-	Value     string `json:"value"`
-	Partition int32  `json:"partition"`
-	Offset    int64  `json:"offset"`
+	Topic     string      `json:"topic"`
+	Key       string      `json:"key"`
+	Value     interface{} `json:"value"`
+	Partition int32       `json:"partition"`
+	Offset    int64       `json:"offset"`
 }
 
 type consumeGroupPayload struct {

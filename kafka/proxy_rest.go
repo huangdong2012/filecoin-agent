@@ -79,7 +79,7 @@ func (p *restProxy) loopConsumer(rc *restConsumer, stopC <-chan bool, offsetOpt 
 
 			for _, msg := range msgs {
 				cmd := &model.CommandRequest{}
-				if err := json.Unmarshal([]byte(msg.Value), cmd); err == nil {
+				if err := json.Unmarshal(msg.Value.([]byte), cmd); err == nil {
 					rc.messageC <- cmd
 
 					if offsetOpt != nil && offsetOpt.SetOffset != nil {
