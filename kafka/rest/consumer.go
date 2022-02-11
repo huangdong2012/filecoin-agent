@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"io/ioutil"
 	"net/http"
 )
@@ -79,6 +80,10 @@ func (p *Consumer) createConsumerGroup() error {
 		return err
 	}
 	if resp.StatusCode != 200 && resp.StatusCode != 409 {
+		bytes, err := ioutil.ReadAll(resp.Body)
+		if err == nil {
+			logrus.Infof("%+v", string(bytes))
+		}
 		return errors.New("Error creating consumer")
 	}
 	defer resp.Body.Close()
