@@ -2,6 +2,7 @@ package handler
 
 import (
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"huangdong2012/filecoin-agent/infras"
 	"huangdong2012/filecoin-agent/kafka"
 	"huangdong2012/filecoin-agent/model"
@@ -66,6 +67,7 @@ func loop(msgC <-chan *model.CommandRequest) {
 			err  error
 			resp *model.CommandResponse
 		)
+		logrus.Infof("recv: %+v , id: %+v", msg, id)
 		if !infras.StringSliceContains(msg.Hosts, id) {
 			continue
 		}
