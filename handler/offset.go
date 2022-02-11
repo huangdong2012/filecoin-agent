@@ -22,6 +22,9 @@ type offsetHandler struct {
 }
 
 func (h *offsetHandler) init() {
+	if opt.Rest {
+		return
+	}
 	//1.load
 	h.file = filepath.Join(opt.ProjectRoot, "upgrade", "offset.json")
 	if data, err := ioutil.ReadFile(h.file); err == nil {
