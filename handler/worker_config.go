@@ -18,7 +18,7 @@ type workerConfigHandler struct {
 }
 
 func (h *workerConfigHandler) Handle(msg *model.CommandRequest) (*model.CommandResponse, error) {
-
+	logrus.Infof("recv worker msg: %+v ", msg)
 	err := h.handlerWorkerTask(msg)
 	if err != nil {
 		return nil, err
@@ -32,8 +32,7 @@ func (h *workerConfigHandler) Handle(msg *model.CommandRequest) (*model.CommandR
 }
 
 func (h *workerConfigHandler) handlerWorkerTask(msg *model.CommandRequest) error {
-	var workerConf WorkerConfDto
-
+	var workerConf model.WorkerConfDto
 	err := json.Unmarshal([]byte(msg.Body), &workerConf)
 	if err != nil {
 		return err
@@ -48,7 +47,7 @@ func (h *workerConfigHandler) handlerWorkerTask(msg *model.CommandRequest) error
 	if err != nil {
 		logrus.Error("json.Unmarshal_ERR::", err.Error())
 	}
-
+	logrus.Infof("read_data: %+v ", string(data))
 	var str bytes.Buffer
 	var workerCfg = model.WorkerConf{
 		ID:                 json1.ID,
@@ -72,15 +71,4 @@ func (h *workerConfigHandler) handlerWorkerTask(msg *model.CommandRequest) error
 		logrus.Errorf(err2.Error())
 	}
 	return nil
-}
-
-type WorkerConfDto struct {
-	MaxTaskNum         string `json:"max_task_num"`
-	ParallelPledge     string `json:"parallel_pledge"`
-	ParallelPreCommit1 string `json:"parallel_precommit1"`
-	ParallelPreCommit2 string `json:"parallel_precommit2"`
-	ParallelCommit     string `json:"parallel_commit"`
-	Commit2Srv         bool   `json:"commit2_srv"`
-	WdPostSrv          bool   `json:"wd_post_srv"`
-	WnPostSrv          bool   `json:"wn_post_srv"`
 }

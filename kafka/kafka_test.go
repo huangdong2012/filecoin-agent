@@ -19,7 +19,7 @@ func setup() {
 		//o.Rest = false
 
 		o.Brokers = []string{
-			"http://localhost:8082",
+			"http://103.44.247.17:28082",
 		}
 		o.Rest = true
 	})
@@ -31,12 +31,17 @@ func TestPublish(t *testing.T) {
 	topic := "zdz.command.request"
 	p, o, err := Publish(topic, infras.ToJson(&model.CommandRequest{
 		ID:    uuid.New().String(),
-		Kind:  int(model.CommandKind_Upgrade),
-		Hosts: []string{infras.HostNo()},
-		Body: infras.ToJson(&model.UpgradeCommand{
-			SourceUrl: "http://localhost:81/download/lotus.tar.gz",
-			Sha256:    "7be1a2f00576ad6ef8e59c874849b3e8685d71949e8d546e5854fb730de57e24",
-			Services:  []string{"test"},
+		Kind:  int(model.CommandKind_WorkerConfig),
+		Hosts: []string{"7c7d4a8d-9f69-14d5-a899-a85e455acaa1"},
+		Body: infras.ToJson(&model.WorkerConfDto{
+			MaxTaskNum:         10,
+			ParallelPledge:     10,
+			ParallelPreCommit1: 10,
+			ParallelPreCommit2: 10,
+			ParallelCommit:     10,
+			Commit2Srv:         false,
+			WdPostSrv:          false,
+			WnPostSrv:          false,
 		}),
 		CreateTime: time.Now().Unix(),
 	}))
