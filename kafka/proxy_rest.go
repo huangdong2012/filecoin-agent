@@ -3,6 +3,7 @@ package kafka
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"sync"
 	"time"
 
@@ -79,7 +80,12 @@ func (p *restProxy) loopConsumer(rc *restConsumer, stopC <-chan bool, offsetOpt 
 
 			for _, msg := range msgs {
 				cmd := &model.CommandRequest{}
-				if err := json.Unmarshal(msg.Value.([]byte), cmd); err == nil {
+				msgBytes, err := json.Marshal(msg.Value)
+				if err != nil {
+					logrus.Error(err)
+					continue
+				}
+				if err := json.Unmarshal(msgBytes, cmd); err == nil {
 					rc.messageC <- cmd
 
 					if offsetOpt != nil && offsetOpt.SetOffset != nil {
