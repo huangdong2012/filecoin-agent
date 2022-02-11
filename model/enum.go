@@ -10,6 +10,7 @@ const (
 	CommandKind_Pledge
 	CommandKind_WorkerStatus
 	CommandKind_WorkerProcess
+	CommandKind_WorkerConfig
 )
 
 type CommandStatus int

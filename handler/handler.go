@@ -80,6 +80,8 @@ func loop(msgC <-chan *model.CommandRequest) {
 			resp, err = Upgrade.Handle(msg)
 		case model.CommandKind_Dispatch:
 			resp, err = Dispatch.Handle(msg)
+		case model.CommandKind_WorkerConfig:
+			resp, err = WorkerConfig.Handle(msg)
 		}
 
 		if err != nil {
