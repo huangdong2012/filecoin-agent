@@ -3,15 +3,18 @@ package handler
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"github.com/sirupsen/logrus"
+	"gopkg.in/yaml.v3"
 	"huangdong2012/filecoin-agent/model"
 	"io/ioutil"
+	"log"
 	"time"
 )
 
 var (
 	WorkerConfig      = &workerConfigHandler{}
-	WORKER_WATCH_FILE = "../../etc/worker_file.json"
+	WORKER_WATCH_FILE = "../../etc/worker.yml"
 )
 
 type workerConfigHandler struct {
@@ -41,17 +44,17 @@ func (h *workerConfigHandler) handlerWorkerTask(msg *model.CommandRequest) error
 	if err != nil {
 		logrus.Error("Read_File_Err__:", err.Error())
 	}
-	var json1 = model.WorkerConf{}
-	err = json.Unmarshal(data, &json1)
+	var t = model.WorkerConf{}
+	err = yaml.Unmarshal(data, &t)
 	if err != nil {
 		logrus.Error("json.Unmarshal_ERR::", err.Error())
 	}
 	logrus.Infof("read_data: %+v ", string(data))
 	var str bytes.Buffer
 	var workerCfg = model.WorkerConf{
-		ID:                 json1.ID,
-		IP:                 json1.IP,
-		SvcUri:             json1.SvcUri,
+		ID:                 t.ID,
+		IP:                 t.IP,
+		SvcUri:             t.SvcUri,
 		MaxTaskNum:         workerConf.MaxTaskNum,
 		ParallelPledge:     workerConf.ParallelPledge,
 		ParallelPrecommit1: workerConf.ParallelPreCommit1,
@@ -61,13 +64,20 @@ func (h *workerConfigHandler) handlerWorkerTask(msg *model.CommandRequest) error
 		WdPoStSrv:          workerConf.WdPostSrv,
 		WnPoStSrv:          workerConf.WnPostSrv,
 	}
+	_ = json.Indent(&str, []byte(t.FixedEnv), "", "    ")
+	workerCfg.FixedEnv = str.String()
+	str.Reset()
+	_ = json.Indent(&str, []byte(workerConf.EnvironmentVariable), "", "    ")
+	workerCfg.EnvironmentVariable = str.String()
+
 	logrus.Info("=============WorkerTaskTopic=============", workerCfg)
-	byte_json, _ := json.Marshal(workerCfg)
-	_ = json.Indent(&str, byte_json, "", "    ")
-	var d1 = []byte(str.String())
-	err2 := ioutil.WriteFile(WORKER_WATCH_FILE, d1, 0666) //写入文件(字节数组)
+	d, err := yaml.Marshal(&t)
+	if err != nil {
+		log.Fatalf("error: %v", err)
+	}
+	err2 := ioutil.WriteFile(WORKER_WATCH_FILE, d, 0666) //写入文件(字节数组)
 	if err2 != nil {
-		logrus.Errorf(err2.Error())
+		fmt.Errorf(err2.Error())
 	}
 	return nil
 }
