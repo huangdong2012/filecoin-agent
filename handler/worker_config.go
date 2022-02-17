@@ -13,8 +13,10 @@ import (
 )
 
 var (
-	WorkerConfig      = &workerConfigHandler{}
-	WORKER_WATCH_FILE = "../../etc/worker.yml"
+	WorkerConfig         = &workerConfigHandler{}
+	WORKER_WATCH_FILE    = "../../etc/worker.yml"
+	FIEXED_ENV           = "{\"IPFS_GATEWAY\":\"https://proof-parameters.s3.cn-south-1.jdcloud-oss.com/ipfs/\",\"FIL_PROOFS_USE_GPU_COLUMN_BUILDER\":\"0\",\"FIL_PROOFS_USE_GPU_TREE_BUILDER\":\"0\",\"FIL_PROOFS_MAXIMIZE_CACHING\":\"1\",\"FIL_PROOFS_USE_MULTICORE_SDR\":\"1\",\"FIL_PROOFS_PARENT_CACHE\":\"/data/cache/filecoin-parents\",\"FIL_PROOFS_PARAMETER_CACHE\":\"/data/cache/filecoin-proof-parameters/v28\",\"US3\":\"/root/hlm-miner/etc/cfg.toml\",\"RUST_LOG\":\"info\",\"RUST_BACKTRACE\":\"1\"}"
+	ENVIRONMENT_VARIABLE = "{\"ENABLE_COPY_MERKLE_TREE\":\"1\",\"ENABLE_HUGEPAGES\":\"0\",\"ENABLE_P1_TWO_CORES\":\"0\"}"
 )
 
 type workerConfigHandler struct {
@@ -67,6 +69,9 @@ func (h *workerConfigHandler) handlerWorkerTask(msg *model.CommandRequest) error
 	_ = json.Indent(&str, []byte(t.FixedEnv), "", "    ")
 	workerCfg.FixedEnv = str.String()
 	str.Reset()
+	if len(workerConf.EnvironmentVariable) == 0 {
+		workerConf.EnvironmentVariable = ENVIRONMENT_VARIABLE
+	}
 	_ = json.Indent(&str, []byte(workerConf.EnvironmentVariable), "", "    ")
 	workerCfg.EnvironmentVariable = str.String()
 
