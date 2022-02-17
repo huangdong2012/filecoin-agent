@@ -40,8 +40,10 @@ func (h *workerConfigHandler) handlerWorkerTask(msg *model.CommandRequest) error
 	var workerConf model.WorkerConfDto
 	err := json.Unmarshal([]byte(msg.Body), &workerConf)
 	if err != nil {
+		logrus.Info("=============WorkerTaskTopic=============3333333", err.Error())
 		return err
 	}
+	logrus.Info("=============WorkerTaskTopic=============444444")
 	//先读取文件，
 	data, err := ioutil.ReadFile(WORKER_WATCH_FILE)
 	if err != nil {
