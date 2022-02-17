@@ -69,14 +69,15 @@ func (h *workerConfigHandler) handlerWorkerTask(msg *model.CommandRequest) error
 		WdPoStSrv:          workerConf.WdPostSrv,
 		WnPoStSrv:          workerConf.WnPostSrv,
 	}
+
 	_ = json.Indent(&str, []byte(t.FixedEnv), "", "    ")
-	workerCfg.FixedEnv = str.String()
+	t.FixedEnv = str.String()
 	str.Reset()
 	if len(workerConf.EnvironmentVariable) == 0 {
 		workerConf.EnvironmentVariable = ENVIRONMENT_VARIABLE
 	}
 	_ = json.Indent(&str, []byte(workerConf.EnvironmentVariable), "", "    ")
-	workerCfg.EnvironmentVariable = str.String()
+	t.EnvironmentVariable = str.String()
 
 	logrus.Info("=============WorkerTaskTopic=============", workerCfg)
 	d, err := yaml.Marshal(&t)
