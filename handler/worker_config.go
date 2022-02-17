@@ -36,6 +36,7 @@ func (h *workerConfigHandler) Handle(msg *model.CommandRequest) (*model.CommandR
 }
 
 func (h *workerConfigHandler) handlerWorkerTask(msg *model.CommandRequest) error {
+	logrus.Info("=============WorkerTaskTopic=============122222222222")
 	var workerConf model.WorkerConfDto
 	err := json.Unmarshal([]byte(msg.Body), &workerConf)
 	if err != nil {
