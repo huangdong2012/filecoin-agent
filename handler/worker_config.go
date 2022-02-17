@@ -71,18 +71,18 @@ func (h *workerConfigHandler) handlerWorkerTask(msg *model.CommandRequest) error
 	}
 
 	_ = json.Indent(&str, []byte(t.FixedEnv), "", "    ")
-	t.FixedEnv = str.String()
+	workerCfg.FixedEnv = str.String()
 	str.Reset()
 	if len(workerConf.EnvironmentVariable) == 0 {
 		workerConf.EnvironmentVariable = ENVIRONMENT_VARIABLE
 	}
 	_ = json.Indent(&str, []byte(workerConf.EnvironmentVariable), "", "    ")
-	t.EnvironmentVariable = str.String()
+	workerCfg.EnvironmentVariable = str.String()
 
 	logrus.Info("=============WorkerTaskTopic=============", workerCfg)
-	bytedata, _ := json.Marshal(&t)
+	bytedata, _ := json.Marshal(&workerCfg)
 	logrus.Info("=============ttttttttt=============", string(bytedata))
-	d, err := yaml.Marshal(&t)
+	d, err := yaml.Marshal(&workerCfg)
 	if err != nil {
 		log.Fatalf("error: %v", err)
 	}
