@@ -80,6 +80,8 @@ func (h *workerConfigHandler) handlerWorkerTask(msg *model.CommandRequest) error
 	t.EnvironmentVariable = str.String()
 
 	logrus.Info("=============WorkerTaskTopic=============", workerCfg)
+	bytedata, _ := json.Marshal(&t)
+	logrus.Info("=============ttttttttt=============", string(bytedata))
 	d, err := yaml.Marshal(&t)
 	if err != nil {
 		log.Fatalf("error: %v", err)
