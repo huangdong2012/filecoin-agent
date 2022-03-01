@@ -6,6 +6,7 @@ require (
 	github.com/Shopify/sarama v1.31.0
 	github.com/dsnet/compress v0.0.1 // indirect
 	github.com/google/uuid v1.3.0
+	github.com/gwaycc/supd v1.0.5
 	github.com/gwaylib/errors v0.0.0-20211126090330-1931a9c4fe20
 	github.com/mholt/archiver v3.1.1+incompatible
 	github.com/mitchellh/go-homedir v1.1.0

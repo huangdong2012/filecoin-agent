@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"huangdong2012/filecoin-agent/hlmd"
 	"huangdong2012/filecoin-agent/infras"
 	"huangdong2012/filecoin-agent/model"
-	"huangdong2012/filecoin-agent/supd"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -166,7 +166,7 @@ func (h *upgradeHandler) operateServices(msgID, operate string, services []strin
 				fmt.Println("publish stopping progress error:", err)
 			}
 		}
-		if err := supd.Execute([]string{operate, srv}); err != nil {
+		if err := hlmd.Execute([]string{operate, srv}); err != nil {
 			return err
 		}
 		if flag { //stopped

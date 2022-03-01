@@ -3,10 +3,10 @@ package handler
 import (
 	"fmt"
 	"github.com/sirupsen/logrus"
+	"huangdong2012/filecoin-agent/hlmd"
 	"huangdong2012/filecoin-agent/infras"
 	"huangdong2012/filecoin-agent/kafka"
 	"huangdong2012/filecoin-agent/model"
-	"huangdong2012/filecoin-agent/supd"
 	"time"
 )
 
@@ -44,9 +44,9 @@ func Init(opts ...Options) {
 		go loop(msgC)
 	}
 
-	//init supd
+	//init hlmd
 	if len(opt.SupConfig) > 0 {
-		supd.Init(func(o *supd.Option) {
+		hlmd.Init(func(o *hlmd.Option) {
 			o.ConfigPath = opt.SupConfig
 			o.Verbose = opt.Verbose
 		})
