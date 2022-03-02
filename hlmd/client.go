@@ -32,7 +32,7 @@ func (x *hlmdCtl) Execute(args []string) error {
 		// START or STOP
 		////////////////////////////////////////////////////////////////////////////////
 	case "start", "stop", "restart":
-		x.startStopProcesses(rpcc, verb, args[1:])
+		return x.startStopProcesses(rpcc, verb, args[1:])
 
 		////////////////////////////////////////////////////////////////////////////////
 		// SHUTDOWN
@@ -79,48 +79,47 @@ func (x *hlmdCtl) status(rpcc *RPCClient, processes []string) {
 
 // start or stop the processes
 // verb must be: start or stop
-func (x *hlmdCtl) startStopProcesses(rpcc *RPCClient, verb string, processes []string) {
+func (x *hlmdCtl) startStopProcesses(rpcc *RPCClient, verb string, processes []string) error {
 	state := map[string]string{
 		"start":   "started",
 		"stop":    "stopped",
 		"restart": "restarted",
 	}
-	x._startStopProcesses(rpcc, verb, processes, state[verb], true)
+	return x._startStopProcesses(rpcc, verb, processes, state[verb], true)
 }
 
-func (x *hlmdCtl) _startStopProcesses(rpcc *RPCClient, verb string, processes []string, state string, showProcessInfo bool) {
+func (x *hlmdCtl) _startStopProcesses(rpcc *RPCClient, verb string, processes []string, state string, showProcessInfo bool) error {
 	if len(processes) <= 0 {
-		fmt.Printf("Please specify process for %s\n", verb)
+		return fmt.Errorf("Please specify process for %s\n", verb)
 	}
 	for _, pname := range processes {
 		if pname == "all" {
-			reply, err := rpcc.ChangeAllProcessState(verb)
-			if err == nil {
+			if reply, err := rpcc.ChangeAllProcessState(verb); err != nil {
+				return fmt.Errorf("Fail to change all process state to %s(%v)", state, err)
+			} else {
 				if showProcessInfo {
 					x.showProcessInfo(reply.AllProcessInfo, make(map[string]bool))
 				}
-			} else {
-				fmt.Printf("Fail to change all process state to %s", state)
+				return nil
 			}
 		} else {
-			if reply, err := rpcc.ChangeProcessState(verb, pname); err == nil {
-				if showProcessInfo {
-					fmt.Printf("%s: ", pname)
-					if !reply.Success {
-						fmt.Printf("not ")
-					}
-					fmt.Printf("%s\n", state)
-				}
+			if reply, err := rpcc.ChangeProcessState(verb, pname); err != nil {
+				return fmt.Errorf("%s: failed [%v]\n", pname, err)
 			} else {
-				fmt.Printf("%s: failed [%v]\n", pname, err)
-				os.Exit(1)
+				if !reply.Success {
+					return fmt.Errorf("%s: not %s\n", pname, state)
+				}
+				if showProcessInfo {
+					fmt.Printf("%s: %s\n", pname, state)
+				}
 			}
 		}
 	}
+	return nil
 }
 
-func (x *hlmdCtl) restartProcesses(rpcc *RPCClient, processes []string) {
-	x._startStopProcesses(rpcc, "restart", processes, "restarted", true)
+func (x *hlmdCtl) restartProcesses(rpcc *RPCClient, processes []string) error {
+	return x._startStopProcesses(rpcc, "restart", processes, "restarted", true)
 }
 
 // shutdown the supervisord

@@ -171,7 +171,7 @@ func (h *upgradeHandler) operateServices(msgID, operate string, services []strin
 		}
 		if flag { //stopped
 			if err = publishResp(msgID, model.CommandStatus_Running, fmt.Sprintf("stopped service: %v", srv)); err != nil {
-				fmt.Println("publish stopping progress error:", err)
+				fmt.Println("publish stopped progress error:", err)
 			}
 		}
 	}
