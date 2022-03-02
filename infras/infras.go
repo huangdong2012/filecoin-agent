@@ -1,8 +1,8 @@
 package infras
 
 import (
+	"Acumes/uuid-generate/util/utils"
 	"encoding/json"
-	"github.com/shirou/gopsutil/host"
 	"time"
 )
 
@@ -18,11 +18,9 @@ func ToJson(val interface{}) string {
 }
 
 func HostNo() string {
-	info, err := host.Info()
-	if err != nil {
-		return ""
-	}
-	return info.HostID
+	s := make([]string, 0)
+	uuid := utils.UuidGenerate(s)
+	return uuid
 }
 
 func TimeFormat(t time.Time) string {
