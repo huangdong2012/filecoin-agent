@@ -19,10 +19,8 @@ require (
 	github.com/ochinchina/supervisord/xmlrpcclient v0.0.0-20211206031846-72fec8953af3
 	github.com/sirupsen/logrus v1.8.1
 	github.com/smartystreets/goconvey v1.7.2 // indirect
-	github.com/tklauser/go-sysconf v0.3.9 // indirect
 	github.com/ulikunitz/xz v0.5.10 // indirect
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
-	github.com/yusufpapurcu/wmi v1.2.2 // indirect
 	gopkg.in/ini.v1 v1.66.4 // indirect
 	gopkg.in/yaml.v2 v2.2.3
 )
