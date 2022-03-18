@@ -1,6 +1,5 @@
 package filecoin
 
-
 import (
 	"bytes"
 	"context"
@@ -110,8 +109,6 @@ func (c *ScheduleClient) Request(ctx context.Context, method string, result inte
 	return response.ReadFromResult(result)
 }
 
-
-
 func (c *ScheduleClient) GetWorkerBusyTask(ctx context.Context, wid string) (out int, err error) {
 	err = c.Request(ctx, c.FilecoinMethod("GetWorkerBusyTask"), &out, wid)
 	return
@@ -121,4 +118,10 @@ func (c *ScheduleClient) GetWorkerBusyTask(ctx context.Context, wid string) (out
 func (c *ScheduleClient) RequestDisableWorker(ctx context.Context, wid string) (err error) {
 	err = c.Request(ctx, c.FilecoinMethod("RequestDisableWorker"), nil, wid)
 	return err
+}
+
+//获取minerID
+func (c *ScheduleClient) GetMinerInfo(ctx context.Context) (out string, err error) {
+	err = c.Request(ctx, c.FilecoinMethod("GetMinerInfo"), &out)
+	return
 }
