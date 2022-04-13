@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"fmt"
 	"github.com/sirupsen/logrus"
 	"huangdong2012/filecoin-agent/hlmd"
 	"huangdong2012/filecoin-agent/infras"
@@ -67,11 +66,13 @@ func loop(msgC <-chan *model.CommandRequest) {
 			err  error
 			resp *model.CommandResponse
 		)
-		logrus.Infof("recv: %+v , id: %+v", msg, id)
+		logrus.Infof("command request: msg-id(%+v) msg(%+v)", msg.ID, msg)
 		if !infras.StringSliceContains(msg.Hosts, id) {
+			logrus.Infof("command ignore-host: msg-id(%+v) ", msg.ID)
 			continue
 		}
 		if msg.ExpireTime > 0 && time.Now().After(time.Unix(msg.ExpireTime, 0)) {
+			logrus.Infof("command ignore-expire: msg-id(%+v) ", msg.ID)
 			continue
 		}
 
@@ -85,12 +86,15 @@ func loop(msgC <-chan *model.CommandRequest) {
 		}
 
 		if err != nil {
-			err = publishResp(msg.ID, model.CommandStatus_Error, err.Error())
+			logrus.Errorf("command error: msg-id(%+v) error(%+v)", msg.ID, err)
+			if err = publishResp(msg.ID, model.CommandStatus_Error, err.Error()); err != nil {
+				logrus.Errorf("command publish error: msg-id(%+v) error(%+v)", msg.ID, err)
+			}
 		} else {
-			err = publishResp(msg.ID, model.CommandStatus(resp.Status), resp.Message)
-		}
-		if err != nil {
-			fmt.Println("publish command response error:", err)
+			logrus.Infof("command finish: msg-id(%+v)", msg.ID)
+			if err = publishResp(msg.ID, model.CommandStatus(resp.Status), resp.Message); err != nil {
+				logrus.Errorf("command publish error: msg-id(%+v) error(%+v)", msg.ID, err)
+			}
 		}
 	}
 }
