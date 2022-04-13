@@ -18,8 +18,9 @@ func (x *hlmdCtl) Execute(args []string) error {
 	}
 
 	rpcc := x.createRpcClient()
-	verb := args[0]
+	defer rpcc.client.Close()
 
+	verb := args[0]
 	switch verb {
 
 	////////////////////////////////////////////////////////////////////////////////
