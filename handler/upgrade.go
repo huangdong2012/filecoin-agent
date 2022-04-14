@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"huangdong2012/filecoin-agent/hlmd"
 	"huangdong2012/filecoin-agent/infras"
 	"huangdong2012/filecoin-agent/model"
@@ -68,13 +69,13 @@ func (h *upgradeHandler) Handle(msg *model.CommandRequest) (resp *model.CommandR
 	}
 
 	//5.1.stop and start services
-	if err = h.operateServices(msg.ID, "stop", cmd.Services); err != nil {
+	if err = h.retryOperateServices(msg.ID, "stop", cmd.Services, 5); err != nil {
 		return nil, err
 	}
 	defer func() {
 		//5.2.start services
 		if err == nil {
-			err = h.operateServices(msg.ID, "start", cmd.Services)
+			err = h.retryOperateServices(msg.ID, "start", cmd.Services, 5)
 		}
 	}()
 
@@ -153,6 +154,18 @@ func (h *upgradeHandler) copyFiles(base, dest string, pkg *model.Package) (err e
 	}
 
 	return nil
+}
+
+func (h *upgradeHandler) retryOperateServices(msgID, operate string, services []string, count int) error {
+	var err error
+	for i := 0; i < count; i++ {
+		if err = h.operateServices(msgID, operate, services); err == nil {
+			return nil
+		}
+		logrus.Errorf("operate services error and retry(%+v): msg-id(%+v) error(%+v)", i, msgID, err)
+		time.Sleep(time.Second * 3)
+	}
+	return err
 }
 
 func (h *upgradeHandler) operateServices(msgID, operate string, services []string) error {

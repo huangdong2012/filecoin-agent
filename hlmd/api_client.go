@@ -184,7 +184,7 @@ func (rc *rpcClient) call(ctx context.Context, method string, args interface{}, 
 }
 
 const (
-	ReConnSleepTime = 2 * time.Second
+	ReConnSleepTime = 3 * time.Second
 )
 
 func (rc *rpcClient) Call(ctx context.Context, method string, args interface{}, reply interface{}) error {
