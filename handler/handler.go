@@ -6,6 +6,8 @@ import (
 	"huangdong2012/filecoin-agent/infras"
 	"huangdong2012/filecoin-agent/kafka"
 	"huangdong2012/filecoin-agent/model"
+	"os"
+	"path/filepath"
 	"time"
 )
 
@@ -117,5 +119,8 @@ func defaultProjectRoot() string {
 	if root := "/hlm-miner"; infras.PathExist(root) {
 		return root
 	}
-	return ""
+	if home, err := os.UserHomeDir(); err == nil {
+		return filepath.Join(home, "hlm-miner")
+	}
+	return os.Getenv("PRJ_ROOT")
 }
